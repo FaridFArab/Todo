@@ -1,4 +1,4 @@
-from django.contrib.auth import login
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from rest_framework import generics, permissions
@@ -23,6 +23,18 @@ def signup(request):
             return JsonResponse({'token': str(token)}, status=201)
         except IntegrityError:
             return JsonResponse({'error': 'That username has already been taken. Please choose a new '}, status=400)
+
+
+@csrf_exempt
+def login(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        user = authenticate(request, username=data['username'], password=data['password'])
+        if user is None:
+            return JsonResponse({'error': 'Could not login. Please check username or password.'}, status=400)
+        else:
+            token = Token.objects.get_or_create(user=user)
+            return JsonResponse({'token': str(token)}, status=201)
 
 
 class TodoCompletedList(generics.ListAPIView):
